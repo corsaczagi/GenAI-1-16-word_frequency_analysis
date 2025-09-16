@@ -19,16 +19,16 @@
 ## Установка библиотек
 
 ```bash
-pip install nltk matplotlib
+pip install nltk matplotlib'''
 
 ## Быстрый старт
 
 Установите зависимости:
 
 '''bash
-pip install -r requirements.txt
+pip install -r requirements.txt'''
 
 Запустите скрипт:
 
 '''bash
-python word_frequency_analysis.py
+python word_frequency_analysis.py'''
