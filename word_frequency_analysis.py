@@ -87,7 +87,7 @@ def main():
 
     except Exception as e:
         logger.error(f"Ошибка при выполнении анализа: {e}")
-        print(f"\n❌ Ошибка: {e}")
+        print(f"\n Ошибка: {e}")
         return False
 
 if __name__ == "__main__":
