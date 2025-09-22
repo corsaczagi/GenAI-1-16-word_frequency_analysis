@@ -29,3 +29,6 @@ pip install -r requirements.txt
 
 ```bash
 python word_frequency_analysis.py
+
+## Пример вывода
+<img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/f1557308-6b9b-4a6d-b187-008aa36d5655" />
