@@ -31,4 +31,5 @@ pip install -r requirements.txt
 python word_frequency_analysis.py
 
 ## Пример вывода
-<img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/f1557308-6b9b-4a6d-b187-008aa36d5655" />
+<img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/6b243ee4-b7eb-4377-8194-273ecdb74d51" />
+
