@@ -32,5 +32,5 @@ python word_frequency_analysis.py
 ```
 
 ## Пример вывода
-<img width="1290" height="847" alt="image" src="https://github.com/user-attachments/assets/37210a95-aa1b-4618-89e6-f3867a3779e4" />
+<img width="951" height="639" alt="image" src="https://github.com/user-attachments/assets/7866f08c-ab78-4321-bb41-7329edd12738" />
 
