@@ -1,95 +1,133 @@
 import nltk
-from nltk.corpus import webtext
 from nltk.probability import FreqDist
 import matplotlib.pyplot as plt
 from nltk.corpus import stopwords
-import logging
+import pymorphy3
+import argparse
+import os
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+# Загрузка данных
+nltk.download('stopwords', quiet=True)
+nltk.download('punkt', quiet=True)
 
-def download_nltk_resources():
+DEFAULT_ENCODING = 'utf-8'
+
+
+def setup_argparse():
+    """
+    Настройка аргументов командной строки
+    """
+    parser = argparse.ArgumentParser(description='Анализ частоты слов в текстовом файле')
+    parser.add_argument('filename', help='Путь к текстовому файлу для анализа')
+    return parser
+
+
+def read_text_from_file(filename):
+    """
+    Читает текст из файла
+    """
     try:
-        nltk.download('webtext', quiet=True)
-        nltk.download('stopwords', quiet=True)
-        nltk.download('punkt', quiet=True)
-        return True
+        with open(filename, 'r', encoding=DEFAULT_ENCODING) as file:
+            return file.read()
+    except FileNotFoundError:
+        print(f"Ошибка: файл '{filename}' не найден!")
+        raise
     except Exception as e:
-        logger.error(f"Ошибка при загрузке NLTK ресурсов: {e}")
-        return False
+        print(f"Неожиданная ошибка при чтении файла: {e}")
+        raise
 
-def load_text_data(filename='overheard.txt'):
-    available_files = webtext.fileids()
-    if filename not in available_files:
-        raise ValueError(f"Файл {filename} не найден. Доступные файлы: {available_files}")
-
-    text = webtext.raw(filename)
-    return text
 
 def preprocess_text(text):
+    """
+    Предобработка текста: токенизация, фильтрация, приведение к нижнему регистру
+    Исключение стоп-слов (русских и английских)
+    """
     words = nltk.word_tokenize(text)
     words = [word.lower() for word in words if word.isalpha()]
 
-    stop_words = set(stopwords.words('english'))
-    words = [word for word in words if word not in stop_words]
+    # Исключение стоп-слов (русских и английских)
+    stop_words_english = set(stopwords.words('english'))
+    stop_words_russian = set(stopwords.words('russian'))
+    all_stop_words = stop_words_english.union(stop_words_russian)
+
+    words = [word for word in words if word not in all_stop_words]
 
     return words
 
-def calculate_frequency_distribution(words):
+
+def normalize_words(words):
+    """
+    Нормализация слов с помощью pymorphy3
+    """
+    morph = pymorphy3.MorphAnalyzer()
+    normalized_words = []
+
+    for word in words:
+        parsed = morph.parse(word)[0]
+        normalized_words.append(parsed.normal_form)
+
+    return normalized_words
+
+
+def calculate_word_frequencies(words):
+    """
+    Подсчет частоты слов (FreqDist)
+    """
     return FreqDist(words)
 
-def plot_top_words(fdist, top_n=10, title="Топ самых частых слов"):
-    top_words = fdist.most_common(top_n)
-    words_list, frequencies = zip(*top_words)
 
-    plt.figure(figsize=(14, 8))
-    bars = plt.bar(words_list, frequencies, color='skyblue', edgecolor='black', alpha=0.7)
+def plot_top_words(fdist, top_n=10):
+    """
+    Построение bar plot топ-N слов с подписанными осями
+    """
+    top_words = [word for word, count in fdist.most_common(top_n)]
+    counts = [count for word, count in fdist.most_common(top_n)]
 
-    plt.title(title, fontsize=16, fontweight='bold', pad=20)
-    plt.xlabel('Слова', fontsize=12, fontweight='bold')
-    plt.ylabel('Частота', fontsize=12, fontweight='bold')
-    plt.xticks(rotation=45, ha='right', fontsize=10)
-    plt.yticks(fontsize=10)
+    plt.figure(figsize=(12, 6))
+    plt.bar(top_words, counts, color='skyblue', edgecolor='black')
 
-    plt.grid(axis='y', alpha=0.3, linestyle='--')
+    # Подписи осей
+    plt.xlabel('Слова', fontsize=12)
+    plt.ylabel('Частота', fontsize=12)
+    plt.title(f'Топ-{top_n} самых частых слов', fontsize=14)
 
-    for bar, frequency in zip(bars, frequencies):
-        plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.5,
-                 str(frequency), ha='center', va='bottom', fontsize=10, fontweight='bold')
-
+    plt.xticks(rotation=45)
     plt.tight_layout()
     plt.show()
 
+
 def main():
-    TEXT_FILE = 'overheard.txt'
-    TOP_N_WORDS = 10
+    """
+    Основная функция для выполнения всех задач
+    """
+    parser = setup_argparse()
+    args = parser.parse_args()
 
     try:
-        if not download_nltk_resources():
-            raise RuntimeError("Не удалось загрузить NLTK ресурсы")
+        # Проверка существования файла
+        if not os.path.exists(args.filename):
+            print(f"Ошибка: файл '{args.filename}' не найден!")
+            return
 
-        text = load_text_data(TEXT_FILE)
-        processed_words = preprocess_text(text)
-        frequency_distribution = calculate_frequency_distribution(processed_words)
+        # 1. Чтение файла
+        text = read_text_from_file(args.filename)
 
-        total_words = len(processed_words)
-        unique_words = len(set(processed_words))
-        lexical_diversity = unique_words / total_words if total_words > 0 else 0
+        # 2. Предобработка текста (исключение стоп-слов)
+        words = preprocess_text(text)
 
+        # 3. Нормализация слов
+        normalized_words = normalize_words(words)
 
-        plot_top_words(
-            frequency_distribution,
-            top_n=TOP_N_WORDS,
-            title=f'Топ-{TOP_N_WORDS} самых частых слов (без стоп-слов)\nФайл: {TEXT_FILE}'
-        )
+        # 4. Подсчет частоты слов (FreqDist)
+        fdist = calculate_word_frequencies(normalized_words)
 
-        return True
+        # 5. Построение bar plot топ-10 с подписанными осями
+        plot_top_words(fdist, top_n=10)
 
     except Exception as e:
-        logger.error(f"Ошибка при выполнении анализа: {e}")
-        print(f"\n Ошибка: {e}")
-        return False
+        print(f"Ошибка: {e}")
 
+
+# Запуск программы
 if __name__ == "__main__":
-    success = main()
-    exit(0 if success else 1)
+    main()
